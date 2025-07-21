@@ -39,20 +39,18 @@ class DataPreprocessor:
         
         # Define feature lists
         self.numerical_features = [
-            'sell_thru', 'dollars', 'shipments', 'inventory', 'aged_inventory',
-            't1_wos', 'sell_to_t2', 't2_wos', 't2_inventory_t2',
-             'Eligible_Sellthru', 'Target_Sellthru',
-            'Achiev_Sellthru', 'Eligible_Shipments', 'Target_Shipments',
-            'Achiev_Shipments'
+            'SellThru', 'SellTo', 'T2Inventory',
+       'DistributorInventory', 'Backlog', 'Shipments', 'AgedInventory',
+       'WeeksOfStockT1', 'WeeksOfStockT2', 'NumCompetitors',
+       'PricePositioning', 'TargetQty'
         ]
         
-        self.categorical_features = ['Global_Distributor_Group_Name','reporter_name', 'reporter_hq_id', 'PRODUCT_GROUP_BMT','fiscal_year_quarter', 'product_number', 'reporter_country_code']
+        self.categorical_features = ['SKU', 'Country']
         
         self.engineered_features = [
             'SellThruToRatio', 
             'InventoryTurnoverRate', 
             'TargetAchievement',
-            'TargetAchievement_ship', 
             'SupplyChainEfficiency', 
             'AgedInventoryPct'
         ]
@@ -198,29 +196,28 @@ class DataPreprocessor:
             # Interpretation: Measures how effectively distributors are selling to end customers
             # High values (>1) indicate distributors are selling more than they're buying (reducing inventory)
             # Low values (<0.7) may indicate channel stuffing or sell-through issues
-            result_df['SellThruToRatio'] = result_df['sell_thru'] / result_df['sell_to_t2'].replace(0, 1)
+            result_df['SellThruToRatio'] = result_df['SellThru'] / result_df['SellTo'].replace(0, 1)
             
             # 2. Inventory turnover rates
             # Interpretation: How quickly inventory is sold and replaced
             # Higher values indicate faster inventory movement (generally positive)
-            result_df['InventoryTurnoverRate'] = result_df['sell_to_t2'] / result_df['inventory'].replace(0, 1)
+            result_df['InventoryTurnoverRate'] = result_df['SellTo'] / result_df['DistributorInventory'].replace(0, 1)
             
             # 3. Target achievement percentages
             # Interpretation: Sales performance against targets
             # Values close to 100% indicate accurate forecasting and good execution
-            result_df['TargetAchievement'] = (result_df['Achiev_Sellthru'] / result_df['Target_Sellthru'].replace(0, 1)) * 100
-            result_df['TargetAchievement_ship'] = (result_df['Achiev_Shipments'] / result_df['Target_Shipments'].replace(0, 1)) * 100
+            result_df['TargetAchievement'] = (result_df['SellThru'] / result_df['TargetQty'].replace(0, 1)) * 100
 
 
             # 4. Supply efficiency: Shipment vs Backlog
             # Interpretation: Ability to fulfill orders against existing backlog
             # Higher values indicate better supply chain performance
-            result_df['SupplyChainEfficiency'] = result_df['shipments'] / (result_df['Eligible_Shipments'] + 1)#result_df['Shipments'] / (result_df['Backlog'] + 1)
+            result_df['SupplyChainEfficiency'] = result_df['Shipments'] / (result_df['Backlog'] + 1)
             
             # 5. Aged Inventory Percentage
             # Interpretation: Percentage of inventory at risk of obsolescence
             # Higher values indicate potential inventory health issues
-            result_df['AgedInventoryPct'] = (result_df['aged_inventory'] / result_df['inventory'].replace(0, 1)) * 100
+            result_df['AgedInventoryPct'] = (result_df['AgedInventory'] / result_df['DistributorInventory'].replace(0, 1)) * 100
             
             # Log summary statistics for the new features
             for feature in self.engineered_features:

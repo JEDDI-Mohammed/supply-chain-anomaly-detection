@@ -28,7 +28,7 @@ class AnomalyVisualizer:
     def __init__(self):
         """Initialize the visualizer."""
         # Configure default plot styles
-        plt.style.use('seaborn-whitegrid')
+        plt.style.use('seaborn-v0_8-darkgrid')
         self.default_palette = 'Set2'
         self.anomaly_palette = {'Normal': '#1f77b4', 'Anomaly': '#d62728'}
         

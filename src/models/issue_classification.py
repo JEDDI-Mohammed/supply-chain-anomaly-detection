@@ -57,11 +57,11 @@ class IssueClassifier:
         self.issue_types = [
             'Inventory_Imbalance',
             'Sales_Performance_Gap',
-            'Shipments_Performance_Gap',
-            # 'Pricing_Issue',
-            # 'Supply_Chain_Disruption',
+            'Pricing_Issue',
+            'Supply_Chain_Disruption',
             'Sell_Through_Bottleneck',
-            'No_Issue'
+            'Aged Inventory'
+            'Unknown'
         ]
         logger.info("Issue classifier initialized")
 
@@ -86,16 +86,16 @@ class IssueClassifier:
         
         # Define the conditions for each issue type
         conditions = [
-            (result_df['t1_wos'] > 8) | (result_df['t2_wos'] < 2),
-            (result_df['TargetAchievement'] < 0.7),
-            (result_df['TargetAchievement_ship'] < 0.7),
-            # (result_df['PricePositioning'] > 110),
-            # (result_df['Backlog'] < result_df['Backlog'].quantile(0.25)),
-            (result_df['SellThruToRatio'] < 0.7)
+            (result_df['WeeksOfStockT1'] > 8) | (result_df['WeeksOfStockT2'] < 2),
+            (result_df['TargetQty'] < 0.7),
+            (result_df['PricePositioning'] > 110),
+            (result_df['Backlog'] < result_df['Backlog'].quantile(0.25)),
+            (result_df['SellThruToRatio'] < 0.7),
+            (result_df['AgedInventoryPct'] > 20)
         ]
 
         # Create an issue type column with default value
-        result_df['issue_type'] = 'No_Issue'
+        result_df['issue_type'] = 'Unknown'
         
         # Apply rule-based classification only for anomalies
         for condition, issue in zip(conditions, self.issue_types[:-1]):  # Exclude 'No_Issue'

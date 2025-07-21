@@ -202,7 +202,16 @@ class RecommendationGenerator:
                     
             return f"Channel partner for distributor {distributor} at {sku} in {country} is not selling to end customers efficiently. Sell-through ratio is only {sell_thru_ratio:.2f} (target >0.85). Provide sales training, marketing support, and adjust partner incentives to reward sell-through activity."
         
-        elif issue == "No_Issue" or issue == "Unknown Issue":
+
+        elif issue == "Aged Inventory":
+            try:
+                aged_inventory_pct = float(row_data.get('AgedInventoryPct', 0))
+            except (ValueError, TypeError):
+                aged_inventory_pct = 0
+                    
+            return f"Address aged inventory for distributor {distributor} at {sku} in {country}. Current aged inventory percentage is {aged_inventory_pct:.1f}%. Implement clearance promotions, bundle offers, and targeted marketing to reduce aged stock by at least 20% in the next quarter."
+        
+        elif issue == "Unknown" or issue == "Unknown Issue":
             # Enhanced recommendation for anomalies without a specific issue type
             # Extract key metrics to provide some context
             try:
@@ -272,11 +281,12 @@ class RecommendationGenerator:
         
         # Build context sections
         sections = {
-            'Sales Data': ['sell_thru', 'sell_to_t2', 'Target_Sellthru', 'Achiev_Sellthru'],
-            'Inventory Status': ['inventory', 'aged_inventory','t1_wos', 't2_wos', 't2_inventory_t2'],
+            'Sales Data': ['SellThru', 'SellTo', 'TargetQty'],
+            'Inventory Status': ['T2Inventory','DistributorInventory','AgedInventory',
+            'WeeksOfStockT1', 'WeeksOfStockT2'],
             'Supply Chain': ['Shipments', 'SupplyChainEfficiency'],
-            # 'Market Position': ['NumCompetitors', 'PricePositioning'],
-            'Derived Metrics': ['SellThruToRatio', 'InventoryTurnoverRate']
+            'Market Position': ['NumCompetitors', 'PricePositioning'],
+            'Derived Metrics': ['SellThruToRatio', 'InventoryTurnoverRate', 'TargetAchievement','AgedInventoryPct']
         }
         
         # Populate context with available data
