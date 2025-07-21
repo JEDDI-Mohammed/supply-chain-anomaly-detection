@@ -1,0 +1,110 @@
+# Supply Chain Anomaly Detection Project Checklist
+
+Use this checklist to ensure all aspects of the project are properly set up before finalizing.
+
+## Project Structure
+
+- [ ] All required directories are created:
+  - [ ] `src/` with subdirectories for each component
+  - [ ] `data/` with raw, processed, and sample subdirectories
+  - [ ] `notebooks/` for Jupyter notebooks
+  - [ ] `mlflow/` for MLflow utilities
+  - [ ] `scripts/` for standalone scripts
+  - [ ] `tests/` for test suite
+  - [ ] `docs/` for documentation
+  - [ ] `config/` for configuration files
+  - [ ] `models/` for saved models
+
+## Core Code
+
+- [ ] All core modules are implemented:
+  - [ ] `src/data/preprocess.py` - Data preprocessor
+  - [ ] `src/models/anomaly_detection.py` - Anomaly detector
+  - [ ] `src/models/issue_classification.py` - Issue classifier
+  - [ ] `src/models/recommendation.py` - Recommendation generator
+  - [ ] `src/visualization/visualize.py` - Visualizer
+  - [ ] `src/models/sc_issue_detection.py` - Integration facade
+
+- [ ] MLflow integration is implemented:
+  - [ ] `mlflow/mlflow_utils.py` - MLflow utilities
+
+## Scripts and Configuration
+
+- [ ] Training script is implemented:
+  - [ ] `scripts/train_model.py`
+
+- [ ] Configuration files are created:
+  - [ ] `config/model_params.yml`
+
+## Project Files
+
+- [ ] Project files are created:
+  - [ ] `README.md` - Documentation
+  - [ ] `setup.py` - Package installation
+  - [ ] `.gitignore` - Git ignore patterns
+
+## Demo and Examples
+
+- [ ] Demo notebook is created:
+  - [ ] `notebooks/01_supply_chain_anomaly_detection_demo.ipynb`
+
+- [ ] Sample data is available:
+  - [ ] `data/sample/sample_supply_chain_data.csv`
+
+## Git Setup
+
+- [ ] Git repository is initialized
+- [ ] `.gitignore` is properly configured
+- [ ] All necessary directories have `.gitkeep` files
+- [ ] Initial commit is created
+- [ ] Remote repository is set up on GitHub
+- [ ] All files are pushed to the remote repository
+
+## Package Installation
+
+- [ ] Package is installable with pip:
+  ```bash
+  pip install -e .
+  ```
+- [ ] All dependencies are properly listed in `setup.py`
+- [ ] Package imports work correctly
+
+## Testing
+
+- [ ] Core functionality is tested
+- [ ] Demo notebook runs without errors
+- [ ] All imports work correctly
+- [ ] Training script runs successfully
+- [ ] MLflow tracking works if available
+
+## Documentation
+
+- [ ] README.md provides clear introduction and setup instructions
+- [ ] Each module has proper docstrings
+- [ ] Functions and methods have parameter documentation
+- [ ] Demo notebook is well-documented with explanations
+
+## MLflow Integration
+
+- [ ] MLflow tracking works correctly
+- [ ] Parameters are logged properly
+- [ ] Metrics are logged properly
+- [ ] Models are logged properly
+- [ ] Artifacts (visualizations, dataframes) are logged properly
+- [ ] Model registry functions work if enabled
+
+## Databricks Compatibility
+
+- [ ] Code works in Databricks environment
+- [ ] Databricks-specific utilities are implemented
+- [ ] Delta Lake integration works if used
+- [ ] MLflow integration works with Databricks workspace
+
+## Final Steps
+
+- [ ] Run through the entire pipeline once more to ensure everything works
+- [ ] Check for any hardcoded paths or parameters that should be configurable
+- [ ] Ensure all TODOs and placeholders are addressed
+- [ ] Update version number in setup.py
+- [ ] Create a git tag for the release
+- [ ] Push final changes to GitHub

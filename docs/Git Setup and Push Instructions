@@ -1,0 +1,138 @@
+# Git Setup and Push Instructions
+
+Follow these steps to set up your Git repository and push the supply chain anomaly detection project:
+
+## 1. Initialize Git Repository
+
+```bash
+# Navigate to your project directory
+cd supply-chain-anomaly-detection
+
+# Initialize a new Git repository
+git init
+```
+
+## 2. Create Empty Directories with .gitkeep
+
+Git doesn't track empty directories. Create `.gitkeep` files to ensure all directory structure is preserved:
+
+```bash
+# Create directory structure with .gitkeep files
+mkdir -p data/raw data/processed data/sample models
+touch data/raw/.gitkeep data/processed/.gitkeep models/.gitkeep
+```
+
+## 3. Ensure Sample Data is Included
+
+Since sample data is crucial for the demo, make sure it's not ignored:
+
+```bash
+# Create the sample data directory
+mkdir -p data/sample
+
+# Update .gitignore to exclude all data but include samples
+# This is already configured in the provided .gitignore
+```
+
+## 4. Add Files to Git
+
+```bash
+# Add all files
+git add .
+
+# Verify what will be committed
+git status
+```
+
+## 5. Create Initial Commit
+
+```bash
+# Create initial commit
+git commit -m "Initial commit: Supply Chain Anomaly Detection project"
+```
+
+## 6. Create GitHub Repository
+
+1. Go to GitHub (https://github.com)
+2. Click the "+" icon in the top-right and select "New repository"
+3. Name your repository "supply-chain-anomaly-detection"
+4. Add a description: "A machine learning system for detecting and classifying supply chain anomalies"
+5. Choose visibility (public or private)
+6. Do NOT initialize with README, .gitignore, or license (since we already have these)
+7. Click "Create repository"
+
+## 7. Connect Local Repository to GitHub
+
+```bash
+# Add remote repository
+git remote add origin https://github.azc.ext.hp.com/mohammed-jeddi/supply-chain-anomaly-detection
+
+# Push to GitHub
+git push -u origin main
+```
+
+If your default branch is called "master" instead of "main":
+
+```bash
+git push -u origin master
+```
+
+Or if you want to rename your default branch:
+
+```bash
+git branch -M main
+git push -u origin main
+```
+
+## 8. Verify Repository
+
+1. Go to your GitHub repository URL (https://github.azc.ext.hp.com/mohammed-jeddi/supply-chain-anomaly-detection)
+2. Ensure all files and directories are present
+3. Check that the README.md is displayed correctly on the repository homepage
+
+## 9. Set Up GitHub Pages (Optional)
+
+If you want to provide documentation as a website:
+
+1. Go to your repository settings
+2. Scroll down to "GitHub Pages"
+3. Select source branch (main or master)
+4. Choose the "docs" folder
+5. Click "Save"
+
+## 10. Create Development Branch
+
+For ongoing development:
+
+```bash
+# Create and switch to a development branch
+git checkout -b develop
+
+# Push the development branch to GitHub
+git push -u origin develop
+```
+
+## Best Practices for Ongoing Development
+
+1. **Work in Feature Branches**: Create branches for new features or bug fixes
+   ```bash
+   git checkout -b feature/new-visualization-tool
+   ```
+
+2. **Commit Regularly**: Make small, focused commits with clear messages
+   ```bash
+   git commit -m "Add PCA-based anomaly visualization"
+   ```
+
+3. **Pull Before Push**: Always pull the latest changes before pushing
+   ```bash
+   git pull origin develop
+   ```
+
+4. **Use Pull Requests**: Instead of directly pushing to main, create pull requests for code review
+
+5. **Tag Releases**: Create tags for stable versions
+   ```bash
+   git tag -a v1.0.0 -m "Initial stable release"
+   git push origin v1.0.0
+   ```

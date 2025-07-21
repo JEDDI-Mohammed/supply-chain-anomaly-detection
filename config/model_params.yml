@@ -1,0 +1,58 @@
+# Supply Chain Anomaly Detection Model Configuration
+
+# Anomaly detection parameters
+anomaly_detection:
+  # Expected proportion of anomalies in the dataset
+  contamination: 0.05
+  # Number of estimators for Isolation Forest
+  n_estimators: 100
+  # Sample size for Isolation Forest
+  max_samples: "auto"
+  # Number of neighbors for LOF
+  n_neighbors: 20
+  # Random seed for reproducibility
+  random_state: 42
+
+# Issue classification parameters
+issue_classification:
+  # Whether to use ML-based classification in addition to rule-based
+  use_ml_classification: true
+  # Number of estimators for RandomForest classifier
+  n_estimators: 100
+  # Maximum depth for RandomForest classifier
+  max_depth: 10
+  # Minimum samples to split a node in RandomForest
+  min_samples_split: 5
+  # Minimum samples in a leaf node in RandomForest
+  min_samples_leaf: 2
+  # Whether to use class weights to handle imbalance
+  class_weight: "balanced"
+  # Random seed for reproducibility
+  random_state: 42
+
+# Recommendation parameters
+recommendation:
+  # Whether to use LLM for enhanced recommendations
+  use_llm: false
+  # LLM model to use
+  llm_model: "gpt-4o"
+  # Threshold for high priority issues
+  high_priority_threshold: 0.7
+
+# Visualization parameters
+visualization:
+  # Figure size for standard plots
+  standard_figsize: [10, 6]
+  # Figure size for PCA plots
+  pca_figsize: [18, 8]
+  # Color palette for issue types
+  palette: "viridis"
+
+# MLflow parameters
+mlflow:
+  # Default experiment name
+  experiment_name: "supply_chain_anomaly_detection"
+  # Whether to register models by default
+  register_model: false
+  # Default model name in registry
+  model_name: "supply_chain_anomaly_detector"

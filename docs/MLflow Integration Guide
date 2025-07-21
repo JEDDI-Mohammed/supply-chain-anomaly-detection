@@ -1,0 +1,299 @@
+# MLflow Integration Guide
+
+This guide outlines how to use MLflow with the Supply Chain Issue Detection project, particularly in a Databricks environment.
+
+## 1. Overview
+
+MLflow is used in this project for:
+1. **Experiment Tracking**: Record parameters, metrics, and artifacts for each run
+2. **Model Management**: Save, load, and version models
+3. **Model Registry**: Register models for deployment
+4. **Model Serving**: Deploy models for inference
+
+## 2. MLflow in Databricks
+
+Databricks provides a fully managed MLflow environment that is deeply integrated with the workspace. Key advantages include:
+
+- Automatic tracking server setup
+- Integration with Databricks workspace security
+- Optimized storage of artifacts in DBFS
+- Seamless transition between experiment tracking and model registry
+- Integration with Databricks workflows for CI/CD
+
+## 3. Project MLflow Integration
+
+### 3.1 File Structure
+
+```
+mlflow/
+├── __init__.py
+├── mlflow_utils.py          # Utility functions for MLflow operations
+├── register_models.py       # Script to register models in the Model Registry
+└── databricks_integration.py # Databricks-specific utilities
+```
+
+### 3.2 Key Components
+
+The `mlflow_utils.py` module provides utility functions that wrap MLflow operations, including:
+
+- `start_run()`: Start an MLflow run
+- `log_parameters()`: Log multiple parameters
+- `log_metrics()`: Log multiple metrics
+- `log_model()`: Log a model
+- `register_model()`: Register a model in the Model Registry
+- `load_model()`: Load a model from MLflow
+
+## 4. Using MLflow in Databricks
+
+### 4.1 Setting Up an MLflow Experiment
+
+```python
+# In a Databricks notebook
+import mlflow
+from mlflow import mlflow_utils
+
+# Set the experiment
+mlflow.set_experiment("/Users/your-name/supply-chain-anomaly-detection")
+```
+
+### 4.2 Tracking a Run
+
+```python
+from src.models.sc_issue_detection import SupplyChainIssueDetection
+
+# Initialize the model
+detector = SupplyChainIssueDetection()
+
+# Start an MLflow run
+with mlflow.start_run() as run:
+    # Log parameters
+    mlflow.log_param("contamination", 0.05)
+    mlflow.log_param("features", len(detector.preprocessor.numerical_features))
+    
+    # Train the model
+    detector.load_data("/dbfs/path/to/data.csv")
+    detector.preprocess_data()
+    detector.train_anomaly_detector()
+    anomalies = detector.classify_issues()
+    
+    # Log metrics
+    mlflow.log_metric("anomaly_count", anomalies['is_anomaly'].sum())
+    mlflow.log_metric("anomaly_ratio", anomalies['is_anomaly'].sum() / len(detector.data))
+    
+    # Log the model
+    mlflow.sklearn.log_model(detector, "supply_chain_detector")
+    
+    # Log artifacts (visualizations, reports)
+    import matplotlib.pyplot as plt
+    
+    detector.visualize_anomalies('WeeksOfStockT1', 'TargetAchievement')
+    plt.savefig("/tmp/anomaly_viz.png")
+    mlflow.log_artifact("/tmp/anomaly_viz.png")
+```
+
+### 4.3 Using the Model Registry
+
+```python
+from mlflow.tracking import MlflowClient
+
+# Get the run ID
+run_id = run.info.run_id
+
+# Register the model
+client = MlflowClient()
+model_uri = f"runs:/{run_id}/supply_chain_detector"
+result = mlflow.register_model(model_uri, "supply_chain_anomaly_detector")
+
+# Transition the model to Production
+client.transition_model_version_stage(
+    name="supply_chain_anomaly_detector",
+    version=result.version,
+    stage="Production"
+)
+```
+
+### 4.4 Loading a Registered Model
+
+```python
+# Load the model from the registry
+model_name = "supply_chain_anomaly_detector"
+stage = "Production"
+
+loaded_model = mlflow.sklearn.load_model(f"models:/{model_name}/{stage}")
+
+# Use the loaded model
+loaded_model.load_data("/dbfs/path/to/new_data.csv")
+loaded_model.preprocess_data()
+results = loaded_model.train_anomaly_detector()
+```
+
+## 5. Databricks-Specific MLflow Features
+
+### 5.1 MLflow Jobs Integration
+
+You can run MLflow tracking as part of a Databricks job:
+
+```json
+{
+  "name": "Supply Chain Anomaly Detection Training",
+  "existing_cluster_id": "your-cluster-id",
+  "notebook_task": {
+    "notebook_path": "/path/to/your/notebook",
+    "base_parameters": {
+      "data_path": "/dbfs/path/to/data.csv",
+      "contamination": "0.05"
+    }
+  }
+}
+```
+
+### 5.2 Model Serving
+
+Once a model is registered in the Model Registry, you can serve it as a REST endpoint:
+
+1. In the Databricks UI, navigate to the Model Registry
+2. Find your registered model
+3. Click "Enable Serving"
+4. This creates an endpoint for real-time predictions
+
+### 5.3 Feature Store Integration
+
+If using Databricks Feature Store:
+
+```python
+from databricks.feature_store import FeatureStoreClient
+
+fs = FeatureStoreClient()
+
+# Create a feature lookup
+supply_chain_features = fs.create_feature_lookup(
+    table_name="supply_chain_features",
+    lookup_key=["SKU", "Country"],
+    feature_names=["SellThru", "SellTo", "WeeksOfStockT1"]
+)
+
+# Use feature store with MLflow
+with mlflow.start_run():
+    # Get the training set with features from Feature Store
+    training_set = fs.create_training_set(
+        df=training_data,
+        feature_lookups=[supply_chain_features],
+        label="is_anomaly"
+    )
+    
+    # Get the features as a DataFrame
+    training_df = training_set.load_df()
+    
+    # Train your model and log it with the feature spec
+    model = train_model(training_df)
+    fs.log_model(
+        model=model,
+        artifact_path="supply_chain_model",
+        flavor=mlflow.sklearn,
+        training_set=training_set
+    )
+```
+
+## 6. Best Practices
+
+1. **Experiment Organization**: Use clear experiment naming and folder structure
+
+2. **Parameter Tracking**: Log all parameters that might affect model performance
+
+3. **Artifact Management**: Save visualizations and reports as artifacts for each run
+
+4. **Model Versioning**: Use semantically meaningful versions, and control stage transitions carefully
+
+5. **Delta Tables**: Store data in Delta Lake format for versioning capabilities
+
+6. **CI/CD Integration**: Set up automated testing and deployment of models
+
+7. **Documentation**: Add detailed descriptions to models and experiments
+
+## 7. Example: Full Training Pipeline with MLflow
+
+```python
+import mlflow
+import matplotlib.pyplot as plt
+from datetime import datetime
+from src.models.sc_issue_detection import SupplyChainIssueDetection
+
+# Set up the experiment
+experiment_name = "/Users/your-name/supply-chain-anomaly-detection"
+mlflow.set_experiment(experiment_name)
+
+# Configure parameters
+params = {
+    "contamination": 0.05,
+    "n_estimators": 100,
+    "random_state": 42,
+    "use_llm": True
+}
+
+# Start an MLflow run
+run_name = f"training-run-{datetime.now().strftime('%Y-%m-%d-%H-%M')}"
+with mlflow.start_run(run_name=run_name) as run:
+    # Log parameters
+    for key, value in params.items():
+        mlflow.log_param(key, value)
+    
+    # Initialize and train model
+    detector = SupplyChainIssueDetection()
+    detector.load_data("/dbfs/path/to/data.csv")
+    detector.preprocess_data()
+    detector.train_anomaly_detector()
+    anomalies = detector.classify_issues()
+    recommendations = detector.generate_recommendations(anomalies)
+    
+    # Log metrics
+    metrics = {
+        "anomaly_count": anomalies['is_anomaly'].sum(),
+        "anomaly_ratio": anomalies['is_anomaly'].sum() / len(detector.data),
+        "inventory_imbalance_count": sum(anomalies['issue_type'] == 'Inventory_Imbalance'),
+        "sales_gap_count": sum(anomalies['issue_type'] == 'Sales_Performance_Gap'),
+        "pricing_issue_count": sum(anomalies['issue_type'] == 'Pricing_Issue'),
+        "supply_chain_disruption_count": sum(anomalies['issue_type'] == 'Supply_Chain_Disruption'),
+        "sell_through_bottleneck_count": sum(anomalies['issue_type'] == 'Sell_Through_Bottleneck')
+    }
+    
+    for key, value in metrics.items():
+        mlflow.log_metric(key, value)
+    
+    # Create and log visualizations
+    plt.figure(figsize=(10, 6))
+    detector.visualize_anomalies('WeeksOfStockT1', 'TargetAchievement')
+    plt.savefig("/tmp/anomaly_viz1.png")
+    mlflow.log_artifact("/tmp/anomaly_viz1.png")
+    
+    plt.figure(figsize=(10, 6))
+    detector.visualize_anomalies('SellThruToRatio', 'InventoryTurnoverRate')
+    plt.savefig("/tmp/anomaly_viz2.png")
+    mlflow.log_artifact("/tmp/anomaly_viz2.png")
+    
+    # Log PCA visualization
+    try:
+        pca, pca_anomalies = detector.visualize_with_pca()
+        plt.savefig("/tmp/pca_viz.png")
+        mlflow.log_artifact("/tmp/pca_viz.png")
+    except Exception as e:
+        mlflow.log_param("pca_error", str(e))
+    
+    # Log recommendations as JSON
+    import json
+    with open("/tmp/recommendations.json", "w") as f:
+        recommendations_dict = recommendations.to_dict(orient='records')
+        json.dump(recommendations_dict, f)
+    mlflow.log_artifact("/tmp/recommendations.json")
+    
+    # Log the model
+    mlflow.sklearn.log_model(detector, "supply_chain_detector")
+    
+    # Register the model if this is a production run
+    if params.get("register_model", False):
+        model_uri = f"runs:/{run.info.run_id}/supply_chain_detector"
+        result = mlflow.register_model(
+            model_uri=model_uri,
+            name="supply_chain_anomaly_detector"
+        )
+        print(f"Model registered with version: {result.version}")
+```

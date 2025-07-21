@@ -1,0 +1,29 @@
+# This is a Databricks asset bundle definition for 4C.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+bundle:
+  name: 4C
+  uuid: 03456499-19e9-4004-b73c-03224be47774
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    # The default target uses 'mode: development' to create a development copy.
+    # - Deployed resources get prefixed with '[dev my_user_name]'
+    # - Any job schedules and triggers are paused by default.
+    # See also https://docs.databricks.com/dev-tools/bundles/deployment-modes.html.
+    mode: development
+    default: true
+    workspace:
+      host: https://omni360-pna.cloud.databricks.com
+
+  prod:
+    mode: production
+    workspace:
+      host: https://omni360-pna.cloud.databricks.com
+      # We explicitly deploy to /Workspace/Users/mohammed.jeddi@hp.com to make sure we only have a single copy.
+      root_path: /Workspace/Users/mohammed.jeddi@hp.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: mohammed.jeddi@hp.com
+        level: CAN_MANAGE

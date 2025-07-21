@@ -1,0 +1,279 @@
+# Code Refactoring Implementation Plan
+
+This document outlines how to reorganize the existing Supply Chain Issue Detection code into the new project structure.
+
+## 1. Core Class Refactoring
+
+### Split `ScIssueDetection` into Modular Components:
+
+The current `ScIssueDetection` class handles multiple responsibilities and should be split into:
+
+#### 1.1. Data Processing (`src/data/preprocess.py`)
+```python
+class DataPreprocessor:
+    def __init__(self):
+        self.data = None
+        self.numerical_features = [...]
+        self.categorical_features = [...]
+        
+    def load_data(self, filepath):
+        """Load data from CSV file."""
+        
+    def preprocess_data(self):
+        """Handle missing values and normalize data."""
+        
+    def engineer_features(self):
+        """Create engineered features."""
+```
+
+#### 1.2. Anomaly Detection (`src/models/anomaly_detection.py`)
+```python
+class AnomalyDetector:
+    def __init__(self, contamination=0.05):
+        self.scaler = StandardScaler()
+        self.contamination = contamination
+        
+    def train(self, data, numerical_features):
+        """Train ensemble of anomaly detection models."""
+        
+    def predict(self, data, numerical_features):
+        """Predict anomalies on new data."""
+```
+
+#### 1.3. Issue Classification (`src/models/issue_classification.py`)
+```python
+class IssueClassifier:
+    def __init__(self):
+        self.classifier = None
+        
+    def train(self, anomalies, features):
+        """Train classifier on anomalies."""
+        
+    def classify_with_rules(self, anomalies):
+        """Rule-based classification."""
+        
+    def classify_with_ml(self, anomalies, features):
+        """ML-based classification."""
+```
+
+#### 1.4. Recommendation Generation (`src/models/recommendation.py`)
+```python
+class RecommendationGenerator:
+    def __init__(self, use_llm=False):
+        self.use_llm = use_llm
+        
+    def generate_recommendations(self, anomalies):
+        """Generate recommendations for anomalies."""
+        
+    def generate_rule_based_recommendation(self, row_data):
+        """Generate rule-based recommendation."""
+        
+    def generate_llm_recommendation(self, row_data):
+        """Generate LLM-based recommendation."""
+```
+
+#### 1.5. Visualization (`src/visualization/visualize.py`)
+```python
+class AnomalyVisualizer:
+    def __init__(self):
+        pass
+        
+    def visualize_anomalies(self, data, column1, column2):
+        """Create scatter plot visualization of anomalies."""
+        
+    def visualize_with_pca(self, data, numerical_features):
+        """Create PCA visualization."""
+        
+    def analyze_pca_results(self, pca, pca_anomalies):
+        """Analyze PCA results for validation."""
+```
+
+## 2. Integration Layer (`src/models/sc_issue_detection.py`)
+
+Create a facade class that integrates all components:
+
+```python
+class SupplyChainIssueDetection:
+    def __init__(self):
+        self.preprocessor = DataPreprocessor()
+        self.anomaly_detector = AnomalyDetector()
+        self.issue_classifier = IssueClassifier()
+        self.recommendation_generator = RecommendationGenerator()
+        self.visualizer = AnomalyVisualizer()
+        self.data = None
+        
+    def load_data(self, filepath):
+        """Load and preprocess data."""
+        self.data = self.preprocessor.load_data(filepath)
+        return self.data
+        
+    def preprocess_data(self):
+        """Preprocess data and engineer features."""
+        self.data = self.preprocessor.preprocess_data()
+        self.data = self.preprocessor.engineer_features()
+        return self.data
+        
+    def train_anomaly_detector(self):
+        """Train anomaly detection models."""
+        self.data = self.anomaly_detector.train(self.data, self.preprocessor.numerical_features)
+        return self.data
+        
+    def classify_issues(self):
+        """Classify anomalies into issue types."""
+        anomalies = self.issue_classifier.classify_with_ml(
+            self.data[self.data['is_anomaly'] == 1],
+            self.preprocessor.numerical_features + self.preprocessor.categorical_features
+        )
+        return anomalies
+        
+    def generate_recommendations(self, anomalies):
+        """Generate recommendations for anomalies."""
+        return self.recommendation_generator.generate_recommendations(anomalies)
+        
+    def visualize_anomalies(self, column1, column2):
+        """Visualize anomalies."""
+        self.visualizer.visualize_anomalies(self.data, column1, column2)
+        
+    def visualize_with_pca(self):
+        """Visualize using PCA."""
+        return self.visualizer.visualize_with_pca(
+            self.data[self.data['is_anomaly'] == 1],
+            self.preprocessor.numerical_features
+        )
+        
+    def save_models(self, filepath_prefix):
+        """Save all models."""
+        
+    def load_models(self, filepath_prefix):
+        """Load all models."""
+```
+
+## 3. MLflow Integration (`mlflow/mlflow_utils.py`)
+
+Create utility functions for MLflow integration:
+
+```python
+import mlflow
+import mlflow.sklearn
+from mlflow.tracking import MlflowClient
+
+def start_run(experiment_name=None):
+    """Start an MLflow run with optional experiment name."""
+    if experiment_name:
+        mlflow.set_experiment(experiment_name)
+    return mlflow.start_run()
+
+def log_parameters(params_dict):
+    """Log multiple parameters to MLflow."""
+    for key, value in params_dict.items():
+        mlflow.log_param(key, value)
+
+def log_metrics(metrics_dict):
+    """Log multiple metrics to MLflow."""
+    for key, value in metrics_dict.items():
+        mlflow.log_metric(key, value)
+
+def log_model(model, model_name):
+    """Log a model to MLflow."""
+    mlflow.sklearn.log_model(model, model_name)
+
+def register_model(model_uri, name):
+    """Register a model in the MLflow Model Registry."""
+    client = MlflowClient()
+    result = mlflow.register_model(model_uri, name)
+    return result
+
+def load_model(model_uri):
+    """Load a model from MLflow."""
+    return mlflow.sklearn.load_model(model_uri)
+```
+
+## 4. Train Script (`scripts/train_model.py`)
+
+Create a script to train models with MLflow tracking:
+
+```python
+import argparse
+import yaml
+import mlflow
+from mlflow import mlflow_utils
+from src.models.sc_issue_detection import SupplyChainIssueDetection
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train supply chain anomaly detection model')
+    parser.add_argument('--config', type=str, default='config/model_params.yml', 
+                      help='Path to configuration file')
+    parser.add_argument('--data', type=str, required=True,
+                      help='Path to input data CSV')
+    parser.add_argument('--output', type=str, default='models',
+                      help='Output directory for models')
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    
+    # Load configuration
+    with open(args.config, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    # Initialize model
+    detector = SupplyChainIssueDetection()
+    
+    # Start MLflow run
+    with mlflow_utils.start_run(experiment_name="supply_chain_anomaly_detection"):
+        # Log parameters
+        mlflow_utils.log_parameters(config)
+        
+        # Load and preprocess data
+        detector.load_data(args.data)
+        detector.preprocess_data()
+        
+        # Train models
+        detector.train_anomaly_detector()
+        anomalies = detector.classify_issues()
+        
+        # Log metrics
+        mlflow_utils.log_metrics({
+            'anomaly_count': len(anomalies),
+            'anomaly_percentage': (len(anomalies) / len(detector.data)) * 100
+        })
+        
+        # Log models
+        mlflow_utils.log_model(detector, "supply_chain_detector")
+        
+        # Save models locally
+        detector.save_models(f"{args.output}/supply_chain_model")
+        
+        print(f"Training completed. Models saved to {args.output} and logged to MLflow.")
+
+if __name__ == '__main__':
+    main()
+```
+
+## 5. Configuration Files (`config/model_params.yml`)
+
+```yaml
+# Anomaly detection parameters
+anomaly_detection:
+  contamination: 0.05
+  n_estimators: 100
+  max_samples: "auto"
+  random_state: 42
+
+# Issue classification parameters
+issue_classification:
+  use_ml_classification: true
+  n_estimators: 100
+  max_depth: 10
+  class_weight: "balanced"
+  random_state: 42
+
+# Recommendation parameters
+recommendation:
+  use_llm: true
+  high_priority_threshold: 0.7
+```
+
+## 6. Test Refactoring
+
+Update the test files to match the new structure.
