@@ -158,6 +158,5 @@ This project is licensed under the AI Inventory team License - see the LICENSE f
 
 ## 📞 Contact
 
-Project Owner - [JEDDI Mohammed](mailto:mohammed.jeddi@hp.com)
+Project Owner - [JEDDI Mohammed](mailto:mohammed.jeddi@gmail.com)
 
-Project Link: [https://github.azc.ext.hp.com/mohammed-jeddi/supply-chain-anomaly-detection](https://github.com/yourusername/supply-chain-anomaly-detection)
